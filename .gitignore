@@ -1,0 +1,9 @@
+# Ignorar la carpeta del entorno virtual
+.venv/
+
+# Ignorar archivos temporales de Python
+__pycache__/
+*.pyc
+
+# Ignorar archivos de configuración de IDEs
+vscode/

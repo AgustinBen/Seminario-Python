@@ -1,2 +1,6 @@
 # Seminario-Python
-asd
+
+## Grupo N° 
+
+### *Integrante:* Agustín Bengolea
+### *Funcionalidades:* 
