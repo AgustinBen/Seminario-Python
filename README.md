@@ -1,8 +1,5 @@
-# Seminario-Python
+# Seminario-Python - Agustín Bengolea
 
-## Grupo N° 
-
-### *Integrante:* Agustín Bengolea
 ### *Funcionalidades:*
 
 - ABM completo de productos.
