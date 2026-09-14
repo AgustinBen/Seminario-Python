@@ -2,9 +2,9 @@ from fastapi import FastAPI, HTTPException, status, Depends
 from database import Base, engine, get_db
 from sqlalchemy.orm import Session
 import models
-from models import Product
+from models import Product, Sale
 import schemas 
-from schemas import ProductCreate, ProductResponse
+from schemas import ProductCreate, ProductResponse, SaleResponse, SaleCreate
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -47,7 +47,7 @@ def get_product(id: int, db: Session = Depends(get_db)):
     
     try:
         product = db.query(Product).filter(Product.id == id).first()
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail= f"Error en GET /products/{id}: {e}")
 
@@ -56,6 +56,7 @@ def get_product(id: int, db: Session = Depends(get_db)):
 
     response = {"product" : product}
     return response
+
 
 @app.put("/products/{id}", status_code=status.HTTP_200_OK, response_model=ProductResponse)
 def update_product(id: int, product: ProductCreate, db: Session = Depends(get_db)):
@@ -90,13 +91,40 @@ def delete_product(id: int, db: Session = Depends(get_db)):
     db.commit()
     return "Product successfully removed"
 
-# Este es el más corto. Los pasos:
+"""
+● POST /ventas
+● GET /ventas
+● GET /ventas/{id}
+● PUT /ventas/{id}
+● DELETE /ventas/{id} """
 
-# Buscar el producto por id (mismo patrón de siempre).
-# Si no existe → 404.
-# Si existe → db.delete(objeto) y db.commit().
-# Devolver un mensaje de confirmación (como charlamos antes, no hace falta response_model acá).
-# Concepto nuevo, breve
+@app.post("/sales", status_code=status.HTTP_201_CREATED, response_model=SaleResponse)
+def post_sale(sale: SaleCreate, db: Session = Depends(get_db)):
+    try:
+        product = db.query(Product).filter(Product.id == sale.product_id).first()
 
-# db.delete(objeto) marca el objeto para ser eliminado; db.commit() efectivamente ejecuta el DELETE en SQL. 
-# Es el mismo patrón add/commit que en el POST, pero con delete en vez de add.
+    except Exception as e:
+        raise HTTPException(status_code=500, detail= f"Error en producto id:{sale.product_id}: {e}")
+
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    total_price = product.price * sale.quantity
+    new_sale = Sale(date=sale.date, time=sale.time, quantity=sale.quantity, product_id=sale.product_id, total_price=total_price)
+    db.add(new_sale)
+    db.commit()
+    db.refresh(new_sale)
+    return new_sale
+
+
+@app.get("/sales", status_code=status.HTTP_200_OK)
+def get_sales(db: Session = Depends(get_db)):
+    try:
+        sales = db.query(Sale).all()
+        response = {"sales" : sales}
+        return response
+    
+    except Exception as e:
+            raise HTTPException(status_code=500, detail= f"Error en GET /products: {e}")
+    
+
