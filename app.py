@@ -3,13 +3,32 @@ from database import Base, engine, get_db
 from sqlalchemy.orm import Session
 import models
 from models import Product
+import schemas 
+from schemas import ProductCreate, ProductResponse
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
+""" ● POST /productos  
+● GET /productos  
+● GET /productos/{id} 
+● PUT /productos/{id} 
+● DELETE /productos/{id}  """
+
 @app.get("/", tags=["Home"])
 def hello_world():
     return {"message": "¡Hola, mundo!"}
+
+@app.post("/products", status_code=status.HTTP_201_CREATED, response_model=ProductResponse)
+def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+    try:
+        new_product = Product(name=product.name, price=product.price)
+        db.add(new_product)
+        db.commit()
+        db.refresh(new_product)
+        return new_product
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en POST /products: {e}")
 
 
 @app.get("/products", status_code=status.HTTP_200_OK)
@@ -18,30 +37,66 @@ def get_products(db: Session = Depends(get_db)):
         products = db.query(Product).all()
         response = {"products" : products}
         return response
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail= f"Error en /products: {e}")
+        raise HTTPException(status_code=500, detail= f"Error en GET /products: {e}")
         
-
 
 @app.get("/products/{id}", status_code=status.HTTP_200_OK)
 def get_product(id: int, db: Session = Depends(get_db)):
+    
+    try:
+        product = db.query(Product).filter(Product.id == id).first()
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail= f"Error en GET /products/{id}: {e}")
+
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    response = {"product" : product}
+    return response
+
+@app.put("/products/{id}", status_code=status.HTTP_200_OK, response_model=ProductResponse)
+def update_product(id: int, product: ProductCreate, db: Session = Depends(get_db)):
+
+    try:
+        current_product = db.query(Product).filter(Product.id == id).first() # Buscamos el producto por id en la base
+         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en PUT /products/{id}: {e}")
+
+    if not current_product:
+        raise HTTPException(status_code=404, detail="Product not found") # Si no existe devolvemos 404
+
+    current_product.name = product.name
+    current_product.price = product.price
+    db.commit()                     # Guardar los cambios
+    db.refresh(current_product)     # Refrescamos
+    return current_product          # devolvemos el producto actualizado
+
+@app.delete("/products/{id}", status_code=status.HTTP_200_OK)
+def delete_product(id: int, db: Session = Depends(get_db)):
+    try:
+        product = db.query(Product).filter(Product.id == id).first()
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en DELETE /products/{id}: {e}")
 
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    try:
-        product = db.query(Product).filter(Product.id == id).first()
+    db.delete(product)
+    db.commit()
+    return "Product successfully removed"
 
-        response = {"product" : product}
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail= f"Error en /products/{id}: {e}")
+# Este es el más corto. Los pasos:
 
+# Buscar el producto por id (mismo patrón de siempre).
+# Si no existe → 404.
+# Si existe → db.delete(objeto) y db.commit().
+# Devolver un mensaje de confirmación (como charlamos antes, no hace falta response_model acá).
+# Concepto nuevo, breve
 
-
-
-""" ● POST /productos  
-● GET /productos  
-● GET /productos/{id} 
-● PUT /productos/{id} 
-● DELETE /productos/{id}  """
+# db.delete(objeto) marca el objeto para ser eliminado; db.commit() efectivamente ejecuta el DELETE en SQL. 
+# Es el mismo patrón add/commit que en el POST, pero con delete en vez de add.
