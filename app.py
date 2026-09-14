@@ -89,14 +89,3 @@ def delete_product(id: int, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return "Product successfully removed"
-
-# Este es el más corto. Los pasos:
-
-# Buscar el producto por id (mismo patrón de siempre).
-# Si no existe → 404.
-# Si existe → db.delete(objeto) y db.commit().
-# Devolver un mensaje de confirmación (como charlamos antes, no hace falta response_model acá).
-# Concepto nuevo, breve
-
-# db.delete(objeto) marca el objeto para ser eliminado; db.commit() efectivamente ejecuta el DELETE en SQL. 
-# Es el mismo patrón add/commit que en el POST, pero con delete en vez de add.
