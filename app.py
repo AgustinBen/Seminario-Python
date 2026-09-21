@@ -9,6 +9,7 @@ from schemas import ProductCreate, ProductResponse, SaleResponse, SaleCreate
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
+
 # Endpoints de Producto
 
 @app.get("/", tags=["Home"])
@@ -53,6 +54,7 @@ def get_product(id: int, db: Session = Depends(get_db)):
     return product
 
 
+
 @app.put("/products/{id}", status_code=status.HTTP_200_OK, response_model=ProductResponse)
 def update_product(id: int, product: ProductCreate, db: Session = Depends(get_db)):
 
@@ -86,6 +88,7 @@ def delete_product(id: int, db: Session = Depends(get_db)):
     db.commit()
     return "Product successfully removed"
 
+  
 # Endpoints de Venta
 
 @app.post("/sales", status_code=status.HTTP_201_CREATED, response_model=SaleResponse)
@@ -116,64 +119,5 @@ def get_sales(db: Session = Depends(get_db)):
     
     except Exception as e:
             raise HTTPException(status_code=500, detail= f"Error en GET /products: {e}")
-
-
-@app.get("/sales/{id}", status_code=status.HTTP_200_OK, response_model=SaleResponse)
-def get_sale(id: int, db: Session = Depends(get_db)):
-    try:
-        sale = db.query(Sale).filter(Sale.id == id).first()
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail= f"Error en GET /sales/{id}: {e}")
-
-    if not sale:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sale not found")
-
-    return sale
-
-
-@app.put("/sales/{id}", status_code=status.HTTP_200_OK, response_model=SaleResponse)
-def update_sale(id: int, sale: SaleCreate, db: Session = Depends(get_db)):
-    try:
-        current_sale = db.query(Sale).filter(Sale.id == id).first()
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail= f"Error en GET /sales/{id}: {e}")
-
-    if not current_sale:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sale not found")
-
-    try:
-        current_product = db.query(Product).filter(Product.id == sale.product_id).first()
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail= f"Error en GET /sales/{id}: {e}")
-
-    if not current_product:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-
-    current_sale.date = sale.date
-    current_sale.time = sale.time
-    current_sale.product_id = sale.product_id
-    current_sale.quantity = sale.quantity
-    current_sale.total_price = current_product.price * sale.quantity
-
-    db.commit()
-    db.refresh(current_sale)
-    return current_sale
-
-
-@app.delete("/sales/{id}", status_code=status.HTTP_200_OK)
-def delete_sale(id: int, db: Session = Depends(get_db)):
-    try:
-        sale = db.query(Sale).filter(Sale.id == id).first()
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en DELETE /sales/{id}: {e}")
-
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
     
-    db.delete(sale)
-    db.commit()
-    return "Sale successfully removed"
+
