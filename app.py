@@ -9,11 +9,8 @@ from schemas import ProductCreate, ProductResponse, SaleResponse, SaleCreate
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
-""" ● POST /productos  
-● GET /productos  
-● GET /productos/{id} 
-● PUT /productos/{id} 
-● DELETE /productos/{id}  """
+
+# Endpoints de Producto
 
 @app.get("/", tags=["Home"])
 def hello_world():
@@ -42,7 +39,7 @@ def get_products(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail= f"Error en GET /products: {e}")
         
 
-@app.get("/products/{id}", status_code=status.HTTP_200_OK)
+@app.get("/products/{id}", status_code=status.HTTP_200_OK, response_model=ProductResponse)
 def get_product(id: int, db: Session = Depends(get_db)):
     
     try:
@@ -54,8 +51,8 @@ def get_product(id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
-    response = {"product" : product}
-    return response
+    return product
+
 
 
 @app.put("/products/{id}", status_code=status.HTTP_200_OK, response_model=ProductResponse)
@@ -91,12 +88,8 @@ def delete_product(id: int, db: Session = Depends(get_db)):
     db.commit()
     return "Product successfully removed"
 
-"""
-● POST /ventas
-● GET /ventas
-● GET /ventas/{id}
-● PUT /ventas/{id}
-● DELETE /ventas/{id} """
+  
+# Endpoints de Venta
 
 @app.post("/sales", status_code=status.HTTP_201_CREATED, response_model=SaleResponse)
 def post_sale(sale: SaleCreate, db: Session = Depends(get_db)):
