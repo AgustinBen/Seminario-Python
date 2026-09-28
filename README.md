@@ -1,4 +1,4 @@
-# Seminario de Python - Agustín Bengolea
+# Seminario de Lenguajes - Agustín Bengolea
 
 ### *Funcionalidades:*
 
