@@ -1,10 +1,10 @@
 # Seminario de Lenguajes - Agustín Bengolea
 
-### *Funcionalidades:*
+## Funcionalidades:
 
 - ABM completo de productos.
 - ABM completo de ventas.
-- Cálculo automático del total de cada venta.
+- ABM completo de carrito.
 
 
 ## Instalación
