@@ -6,5 +6,3 @@ engine = create_engine("sqlite:///./database.db", connect_args={"check_same_thre
 db_session = scoped_session(sessionmaker(bind=engine))
 Base = declarative_base()
 Base.query = db_session.query_property()
-
-Base.metadata.create_all(bind=engine)

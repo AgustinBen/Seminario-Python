@@ -9,7 +9,7 @@ class Product(Base):
     name = Column(String(100), nullable=False)
     price = Column(Float, nullable=False)
 
-    cart_product = relationship("Cart_Product", back_populates="product")
+    cart_product = relationship("CartProduct", back_populates="product")
 
 class Cart(Base):
     __tablename__ = "cart"
@@ -18,16 +18,17 @@ class Cart(Base):
     creation_dale = Column(Date, nullable=False)
     status = Column(String(20), nullable=False)
 
-    items = relationship("Cart_Product", back_populates="cart", cascade="all, delete-orphan")
+    items = relationship("CartProduct", back_populates="cart", cascade="all, delete-orphan")
     sales = relationship("Sale", back_populates="cart")
 
-class Cart_Product(Base):
+class CartProduct(Base):
     __tablename__ = "cart_product"
     __table_args__ = (UniqueConstraint("cart_id", "product_id", name="uq_cart_product"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     cart_id = Column(Integer, ForeignKey("cart.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("product.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
 
     cart = relationship("Cart", back_populates="items")
     product = relationship("Product", back_populates="cart_product")

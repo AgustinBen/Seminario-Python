@@ -1,9 +1,13 @@
 from pydantic import BaseModel, field_validator
 from datetime import date, time
 
+
 class ProductCreate(BaseModel):
     name: str
     price: float
+
+    class Config:
+        from_attributes = True
 
 
 class ProductResponse(BaseModel):
@@ -12,30 +16,7 @@ class ProductResponse(BaseModel):
     price: float
 
     class Config:
-        from_attributes = True   # Es un permiso para que Pydantic pueda leer el objeto (en versiones viejas de Pydantic se llama orm_mode = True)
-
-class CartProductCreate(BaseModel):
-    product_id: int
-    quantity: int
-
-    class Config:
-        from_attributes = True
-
-class CartProductDetail(BaseModel):
-    id: int
-    name: str
-    price: float
-
-    class Config:
-        from_attributes = True
-
-class CartProductResponse(BaseModel):
-    id: int
-    product: CartProductDetail
-    quantity: int
-
-    class Config:
-        from_attributes = True
+        from_attributes = True  # Es un permiso para que Pydantic pueda leer el objeto (en versiones viejas de Pydantic se llama orm_mode = True)
 
 
 class CartCreate(BaseModel):
@@ -53,8 +34,34 @@ class CartCreate(BaseModel):
         from_attributes = True
 
 
+class CartProductCreate(BaseModel):
+    product_id: int
+    quantity: int
+
+    class Config:
+        from_attributes = True
+
+
+class CartProductDetail(BaseModel):
+    id: int
+    name: str
+    price: float
+
+    class Config:
+        from_attributes = True
+
+
+class CartProductResponse(BaseModel):
+    id: int
+    product: CartProductDetail
+    quantity: int
+
+    class Config:
+        from_attributes = True
+
+
 class CartResponse(BaseModel):
-    id: int 
+    id: int
     creation_date: date
     status: str
     items: list[CartProductResponse]
@@ -66,16 +73,7 @@ class CartResponse(BaseModel):
 class SaleCreate(BaseModel):
     date: date
     time: time
-    product_id: int
-    quantity: int
-
-
-class SaleResponse(BaseModel):
-    id: int
-    date: date
-    time: time
-    cart: CartResponse
-    total_price: float
+    cart_id: int
 
     class Config:
         from_attributes = True
@@ -88,10 +86,20 @@ class SaleUpdate(BaseModel):
     class Config:
         from_attributes = True
 
-
+ 
 class SaleCartAssign(BaseModel):
     cart_id: int
 
     class Config:
         from_attributes = True
 
+
+class SaleResponse(BaseModel):
+    id: int
+    date: date
+    time: time
+    total_price: float
+    cart: CartResponse
+
+    class Config:
+        from_attributes = True

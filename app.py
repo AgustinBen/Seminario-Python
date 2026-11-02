@@ -1,16 +1,16 @@
 from fastapi import FastAPI, HTTPException, status, Query
 from database import db_session, Base, engine
 from datetime import date
-from models import Product, Sale, Cart
+from models import Product, Sale, Cart, CartProduct
 from schemas import (
     ProductCreate, 
     ProductResponse,
     CartCreate,
-    CartItemCreate,
+    CartProductCreate,
     CartResponse,
     SaleCreate,
     SaleUpdate,
-    #SaleCartAssign,
+    SaleCartAssign,
     SaleResponse,
 )
 
@@ -251,10 +251,7 @@ def delete_sale(sale_id: int):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to delete sale with id {sale_id}: {e}")
 
 
-
-
-
-
+#Endpoints de Carrito
 
 
 
