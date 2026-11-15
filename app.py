@@ -112,11 +112,11 @@ def delete_product(product_id: int):
         if not product:
             raise (HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"))
 
-        # if product.cart_items:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_409_CONFLICT,
-        #         detail="Product cannot be deleted because it is registered in a cart"
-        #     )
+        if product.cart_product:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Product cannot be deleted because it is registered in a cart"
+            )
 
         db_session.delete(product)
         db_session.commit()
@@ -253,24 +253,176 @@ def delete_sale(sale_id: int):
 
 #Endpoints de Carrito
 
+#GET
+@app.get("/carts", status_code=status.HTTP_200_OK, response_model=list[CartResponse])
+def get_carts():
+    try:
+        carts = Cart.query.all()
+        return carts
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to get carts: {e}")
 
 
+#GET ID
+@app.get("/carts/{cart_id}", status_code=status.HTTP_200_OK, response_model=CartResponse)
+def get_cart(cart_id: int):
+    try:
+        cart = Cart.query.get(cart_id)
 
+        if not cart:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
 
+        return cart
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to get cart with id:{cart_id}: {e}")
 
+#POST
+@app.post("/carts", status_code=status.HTTP_201_CREATED, response_model=CartResponse)
+def create_cart(cart_data: CartCreate):
+    try:
+        cart = Cart(creation_date = cart_data.creation_date, status = cart_data.status)
 
-
-
-
-
-
+        db_session.add(cart)
+        db_session.commit()
+        db_session.refresh(cart)
+        return cart
+    
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to create cart: {e}")
 
     
+#PUT
+@app.put("/carts/{cart_id}", status_code=status.HTTP_200_OK, response_model=CartResponse)
+def update_cart(cart_id: int, cart_data: CartCreate):
+    try:
+        cart = Cart.query.get(cart_id)   
+
+        if not cart:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
+
+        if cart.sales:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cart cannot be modified because it is assigned to a sale"
+            )
+
+        cart.creation_date = cart_data.creation_date
+        cart.status = cart_data.status
+
+        db_session.add(cart)
+        db_session.commit()
+        db_session.refresh(cart)
+        return cart
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to update cart with id: {cart_id}: {e}")
 
 
+#DELETE
+@app.delete("/carts/{cart_id}", status_code=status.HTTP_200_OK)
+def delete_cart(cart_id:int):
+    try:
+        cart = Cart.query.get(cart_id)
+
+        if not cart:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
+
+        if cart.sales:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cart cannot be modified because it is assigned to a sale"
+            )
+
+        db_session.delete(cart)
+        db_session.commit()
+
+        return {"message" : "Cart deleted successfully"}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to delete cart with id: {cart_id}: {e}")
 
 
+# POST Cart - Product
+@app.post("/carts/{cart_id}/products", status_code=status.HTTP_200_OK, response_model=CartResponse)
+def post_cart_product(cart_id : int, product_data : CartProductCreate):
+    try:
+        cart = Cart.query.get(cart_id)
+
+        if not cart:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
+
+        if cart.status != 'open':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Products can only be added to a cart with status 'open'"
+            )
+            
+        product = Product.query.get(product_data.product_id)
+
+        if not product:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product does not exist")
+
+        if product_data.quantity <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="The product quantity must be > 0"
+            )
+
+        cart_product = CartProduct.query.filter_by(cart_id=cart.id ,product_id=product.id).first()
+
+        if cart_product:
+            cart_product.quantity += product_data.quantity
+        else:
+            cart_product = CartProduct(
+                cart_id = cart.id,
+                product_id = product.id,
+                quantity = product_data.quantity
+            )
+            db_session.add(cart_product)
+
+        db_session.commit()
+        db_session.refresh(cart)
+
+        return cart
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to add product to cart with id {cart_id}: {e}")
 
 
+# DELETE Cart - Products
+@app.delete("/carts/{cart_id}/products/{product_id}", status_code=status.HTTP_200_OK, response_model=CartResponse)
+def delete_product_from_cart(cart_id:int, product_id:int):
+    try:
+        cart = Cart.query.get(cart_id)
+        if not cart:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
+        
+        if cart.status != "open":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Products can only be removed from a cart with status 'open'"
+            )
 
+        product = CartProduct.query.filter_by(cart_id=cart_id, product_id=product_id).first()
+
+        if not product:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found in the cart")
+        
+        db_session.delete(product)
+        db_session.commit()
+        db_session.refresh(cart)
+
+        return cart
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred while trying to delete product to cart with id {cart_id}: {e}")
 

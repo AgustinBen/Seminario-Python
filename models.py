@@ -15,7 +15,7 @@ class Cart(Base):
     __tablename__ = "cart"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    creation_dale = Column(Date, nullable=False)
+    creation_date = Column(Date, nullable=False)
     status = Column(String(20), nullable=False)
 
     items = relationship("CartProduct", back_populates="cart", cascade="all, delete-orphan")
